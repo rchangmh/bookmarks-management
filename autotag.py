@@ -63,7 +63,10 @@ def main():
             try:
                 need_tags = if_need_tags(item.id)
                 if need_tags:
-                    print(f'+ {item.title}')
+                    try:
+                        print(f'+ {item.title}')
+                    except Exception as error:
+                        print(f' + ___ {error}')
                     suggested_tags = get_suggested_tags(item.id)
                     if suggested_tags:
                         print(f'    {suggested_tags}')

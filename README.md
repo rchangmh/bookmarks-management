@@ -1,6 +1,6 @@
 # Bookmarks Management
 
-Scripts for the link hoarders out there, specifically for [Raindrop](raindrop.io) and [Pocket](https://getpocket.com/) users.
+Scripts for the link hoarders out there, specifically for [Raindrop](https://raindrop.io/) and [Pocket](https://getpocket.com/) users.
 
 ## Raindrop Autotagging
 
@@ -17,8 +17,8 @@ pip3 install python-raindropio requests
 Before running, create `/config.py` file (in the root directory) with the following:
 
 ```
-test_token = 'xxxxx'
-collection_ids = ['unsorted', '1234567']
+test_token = '*****'
+collection_ids = ['unsorted', '00000000']
 start_page = 0
 ```
 
@@ -37,7 +37,7 @@ raindrop_tags_path = './tags_list.py'
 The `/manage_pocket.py` script helps clear out your unread Pocket queue: removing duplicates, filtering on domain, word count, and/or age. Add the following to `/config.py` and run the script in a REPL:
 
 ```
-pocket_consumer_key = 'xxxxx'
-pocket_access_token = 'xxxxx'
+pocket_consumer_key = '*****'
+pocket_access_token = '*****'
 pocket_links_path = './pocket_articles.json'
 ```

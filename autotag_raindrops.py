@@ -86,6 +86,6 @@ def main(collection_ids=[], start_page=0):
 
 if __name__ == '__main__':
     main(
-        config.collection_ids, 
-        config.start_page
+        config.raindrop_collection_ids, 
+        config.collection_start_page,
     )

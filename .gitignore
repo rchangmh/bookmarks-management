@@ -1,2 +1,4 @@
 config.py
 __pycache__
+tags_list.py
+pocket_articles.json

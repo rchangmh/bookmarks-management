@@ -31,11 +31,13 @@ def call_raindrop_api(api_path, id='', error_response={}, method='GET', json=Non
         return error_response
 
 def get_suggested_tags(raindrop_id):
-    return call_raindrop_api(
+    suggested_tags = call_raindrop_api(
         api_path='tags/suggest', 
         id=raindrop_id,
         error_response={}
     ).get('tags', [])
+    suggested_tags = list(filter(lambda tag: len(tag) < 30, suggested_tags))
+    return suggested_tags
 
 def tag_raindrop(raindrop_id, tags=[]):
     current_tags = call_raindrop_api(

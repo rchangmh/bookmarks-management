@@ -54,7 +54,7 @@ def tag_raindrop(raindrop_id, tags=[]):
         json={'tags': tags + current_tags}
     )
 
-def if_need_tags(raindrop_id, less_than=3):
+def if_need_tags(raindrop_id, less_than):
     tags = call_raindrop_api(
         api_path='raindrop',
         id=raindrop_id,
@@ -65,9 +65,10 @@ def if_need_tags(raindrop_id, less_than=3):
 def main(collection_ids=[], start_page=0):
     print('Tagging bookmarks in your Raindrop collection.\n')
     collection_id = input(f'Target collection ID: (default: {collection_ids})\n> ')
-    start_page = int(str(input(f'Start page from: (current: {start_page})\n> ')) or str(start_page))
     collection_ids = [collection_id] if collection_id else collection_ids
-    print(f'Tagging collections: {collection_ids}, starting at page {start_page}...')
+    start_page = int(str(input(f'Start page from: (current: {start_page})\n> ')) or str(start_page))
+    tag_threshold = int(input(f'Tag threshold: (default: 3)\n> ') or 0) or 3
+    print(f'\nTagging links with less than {tag_threshold} tag(s) in collections: {collection_ids}, starting at page {start_page}...\n')
     for i, collection_id in enumerate(collection_ids):
         if collection_id == 'unsorted':
             collection = CollectionRef.Unsorted
@@ -75,10 +76,10 @@ def main(collection_ids=[], start_page=0):
             collection = Collection.get(api, collection_id)
         page = start_page if i == 0 else 0
         while (items := Raindrop.search(api, collection=collection, page=page)):
-            print(f'\nID: {collection_id}: PAGE {page}:\n')
+            print(f'\nID: {collection_id} | PAGE: {page}\n')
             for index, item in enumerate(items):
                 try:
-                    need_tags = if_need_tags(item.id)
+                    need_tags = if_need_tags(item.id, less_than=tag_threshold)
                     if need_tags:
                         try:
                             print(f'+ {item.title}')

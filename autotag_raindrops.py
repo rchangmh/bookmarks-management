@@ -1,3 +1,4 @@
+from tracemalloc import start
 from raindropio import API, Collection, CollectionRef, Raindrop
 import requests
 import time
@@ -62,6 +63,11 @@ def if_need_tags(raindrop_id, less_than=3):
     return len(tags) < less_than
 
 def main(collection_ids=[], start_page=0):
+    print('Tagging bookmarks in your Raindrop collection.\n')
+    collection_id = input(f'Target collection ID: (default: {collection_ids})\n> ')
+    start_page = int(str(input(f'Start page from: (current: {start_page})\n> ')) or str(start_page))
+    collection_ids = [collection_id] if collection_id else collection_ids
+    print(collection_ids, start_page)
     for collection_id in collection_ids:
         if collection_id == 'unsorted':
             collection = CollectionRef.Unsorted

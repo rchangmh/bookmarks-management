@@ -67,13 +67,13 @@ def main(collection_ids=[], start_page=0):
     collection_id = input(f'Target collection ID: (default: {collection_ids})\n> ')
     start_page = int(str(input(f'Start page from: (current: {start_page})\n> ')) or str(start_page))
     collection_ids = [collection_id] if collection_id else collection_ids
-    print(collection_ids, start_page)
-    for collection_id in collection_ids:
+    print(f'Tagging collections: {collection_ids}, starting at page {start_page}...')
+    for i, collection_id in enumerate(collection_ids):
         if collection_id == 'unsorted':
             collection = CollectionRef.Unsorted
         else:
             collection = Collection.get(api, collection_id)
-        page = start_page
+        page = start_page if i == 0 else 0
         while (items := Raindrop.search(api, collection=collection, page=page)):
             print(f'\nID: {collection_id}: PAGE {page}:\n')
             for index, item in enumerate(items):

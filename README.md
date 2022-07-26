@@ -8,7 +8,7 @@ The `/autotag_raindrops.py` script iterates through every link in a given Raindr
 
 Add your Raindrop token and collection ID to `/config.py`. You can get the collection ID from the URL on the Raindrop web app.
 
-You will also need Python 3.7 or later and to install a dependency:
+You will also need Python 3.7 or later, and this dependency:
 
 ```
 pip3 install python-raindropio requests

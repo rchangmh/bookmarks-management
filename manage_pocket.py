@@ -2,6 +2,7 @@ import json
 import datetime
 import config
 import requests
+from autotag_raindrops import call_raindrop_api, get_collection
 
 def pretty_print(obj):
     print(json.dumps(obj, indent=2))
@@ -69,22 +70,38 @@ def read_articles_json(filepath):
         articles_json = json.loads(readfile.read())['list']
     return articles_json
 
-def print_article_info(article={}, article_id=None):
+def create_raindrop(url, tag, title=None, collection=None):
+    raindrop = { 
+        'link': url,
+        'title': title,
+    }
+    if collection:
+        raindrop = raindrop | { 'collection': collection }
+    if tag:
+        raindrop = raindrop | { 'tags': [tag] }
+    if url == title or title == None or title.startswith('http'):
+        raindrop.pop('title')
+    return raindrop
+
+def print_article_info(article={}, article_id=None, articles_json={}, collection=None, tag=None, silent=False):
     if article_id:
-        articles_json = read_articles_json(config.pocket_links_path)
         article = articles_json[list(filter(lambda key: article_id == key, articles_json.keys()))[0]]
     url = article.get('given_url')
     title = article.get('given_title','').strip() or url
     try:
-        print(f'{title}\n{url}\n')
+        if not silent:
+            print(f'{title}\n{url}\n')
+            return create_raindrop(title=title, url=url, tag=tag, collection=collection)
     except:
-        print(f'{url}\n{url}\n')
+        if not silent:
+            print(f'{url}\n{url}\n')
+            return create_raindrop(url=url, tag=tag, collection=collection)
 
 def print_article_count():
     articles_json = read_articles_json(config.pocket_links_path)
     print(f'Total: {len(articles_json)}')
 
-def filter_by_wordcount(greater_than=45000, less_than=130, return_separate=False, print_output=True):
+def filter_by_wordcount(greater_than=80000, less_than=130, return_separate=False, print_output=True):
     greater_than_ids = []
     less_than_ids = []
     articles_json = read_articles_json(config.pocket_links_path)
@@ -180,41 +197,70 @@ def matching_all_lists(*lists):
     print(f'Matching: {len(matching_items)}')
     return matching_items
 
+def archive_to_raindrop(raindrops):
+    max_items = 100
+    responses = []
+    while len(raindrops) > 0:
+        responses += [call_raindrop_api(
+            api_path='raindrops',
+            method='POST',
+            json={'items': raindrops[0:max_items]},
+        )]
+        del raindrops[0:max_items]
+    return responses
+
 def main():
-    refresh = input(f'Is "{config.pocket_links_path}" up to date? (Y/n)\n> ') == 'n'
+    refresh = input(f'\nIs "{config.pocket_links_path}" up to date? (Y/n)\n> ') == 'n'
     if refresh:
         print('Fetching updated articles...')
         refresh_articles_json()
     filters = []
-    if input('Remove duplicates only? (y/N)\n> ')== 'y':
+    if input('\nRemove duplicates only? (y/N)\n> ')== 'y':
         duplicate_ids = get_duplicates()
-        if input('Delete duplicates? (yes/N)\n> ') == 'yes':
+        if input('\nDelete duplicates? (yes/N)\n> ') == 'yes':
             delete_articles(duplicate_ids)
             return
-    if input('Only include non-favorited articles? (Y/n)\n> ') or 'y' == 'y':
+    if (input('\nOnly include non-favorited articles? (Y/n)\n> ') or 'y') == 'y':
         filters += [filter_out_favorites()]
-    if input('Remove articles by age? (y/N)\n> ') == 'y':
+    if input('\nRemove articles by age? (y/N)\n> ') == 'y':
         default_days = int(365*2.5)
-        age = int(input(f'How many days? ({default_days})\n> ') or default_days)
+        age = int(input(f'\nHow many days? ({default_days})\n> ') or default_days)
         filters += [filter_older_than_days(days=age, print_output=False)]
-    if input('Remove articles based on domain? (y/N)\n> ') == 'y':
+    if input('\nRemove articles based on domain? (y/N)\n> ') == 'y':
         filter_by_domains()
         default_domains = ['The Economist', 'The New York Times', 'Bloomberg']
-        domains = input(f'Which domains? (sep = \',\')\n(Defaults: {default_domains})\n> ').split(',')
+        domains = input(f'\nWhich domains? (sep = \',\')\n(Defaults: {default_domains})\n> ').split(',')
         domains = default_domains if domains == [''] else [domain.strip() for domain in domains]
         filters += [filter_by_domains(domains, print_output=False)]
-    if input('Filter by article wordcount? (y/N)\n> ') == 'y':
+    if input('\nFilter by article wordcount? (y/N)\n> ') == 'y':
         filters += [filter_by_wordcount(
-            greater_than=int(input('Articles with word counts greater than? (50000)\n> ') or 50000),
-            less_than=int(input('Articles with word counts less than? (250)\n> ') or 250),
+            # greater_than=int(input('\nArticles with word counts greater than? (50000)\n> ') or 50000),
+            less_than=int(input('\nArticles with word counts less than? (250)\n> ') or 250),
             print_output=False,
         )]
     matching_article_ids = matching_all_lists(*filters)
-    if input('Print all matching articles? (Y/n)\n> ') or 'y' == 'y':
-        print(matching_article_ids)
+    if (input('\nPrint and export all matching articles? (Y/n)\n> ') or 'y') == 'y':
+        raindrops = []
+        print(f'Pocket IDs: {matching_article_ids}\n')
+        collection = get_collection('Pocket Archive')
+        articles_json = read_articles_json(config.pocket_links_path)
         for article_id in matching_article_ids:
-            print_article_info(article_id=article_id)
-    if input('Delete articles? (yes/N)\n> ') == 'yes':
+            raindrops += [print_article_info(
+                article_id=article_id,
+                collection=collection,
+                articles_json=articles_json,
+                tag='pocket-export',
+            )]
+        if (input('\nArchive articles to Raindrop.io? (Y/n)\n> ') or 'y') == 'y':
+            print(f'Archiving {len(raindrops)} links...')
+            archive_responses = archive_to_raindrop(raindrops=raindrops)
+            print(f'Complete: {archive_responses[0].get("result")}')
+            if input('\nPrint response? (y/N)\n> ') == 'y':
+                try:
+                    pretty_print(archive_responses)
+                except Exception as error:
+                    print(error)
+    if input('\nDelete articles? (yes/N)\n> ') == 'yes':
         delete_articles(matching_article_ids)
     return
 

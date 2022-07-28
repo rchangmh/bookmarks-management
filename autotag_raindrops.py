@@ -1,4 +1,3 @@
-from tracemalloc import start
 from raindropio import API, Collection, CollectionRef, Raindrop
 import requests
 import time
@@ -14,6 +13,8 @@ def call_raindrop_api(api_path, id='', error_response={}, method='GET', json=Non
             response = requests.put(f'https://api.raindrop.io/rest/v1/{api_path}/{id}', headers=headers, json=json)
         elif method == 'DELETE':
             response = requests.delete(f'https://api.raindrop.io/rest/v1/{api_path}/{id}', headers=headers, json=json)
+        elif method == 'POST':
+            response = requests.post(f'https://api.raindrop.io/rest/v1/{api_path}', headers=headers, json=json)
         else:
             response = requests.get(f'https://api.raindrop.io/rest/v1/{api_path}/{id}', headers=headers)
         if response.status_code == 429:
@@ -30,6 +31,18 @@ def call_raindrop_api(api_path, id='', error_response={}, method='GET', json=Non
         print(f'    Error calling {api_path}, {id}: {error}')
         # print(f'\nrequests.get("https://api.raindrop.io/rest/v1/{api_path}/{raindrop_id}", headers={headers})\n')
         return error_response
+
+def get_collection(name, return_object=False):
+    collections = call_raindrop_api(
+        api_path='collections',
+    ).get('items')
+    for collection in collections:
+        if collection.get('title') == name:
+            if return_object:
+                return Collection.get(api, collection['_id'])
+            else:
+                return {'$id': collection['_id']} # Format for assigning collection to raindrop.
+    return None
 
 def get_suggested_tags(raindrop_id):
     suggested_tags = call_raindrop_api(

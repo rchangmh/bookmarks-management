@@ -32,14 +32,12 @@ def generate_tag_list_file(path, bookmark_count=1, print_output_only=False):
         print(str_output)
     else:
         with open(path, 'w') as f:
-                f.write(str_output)
+            f.write(str_output)
 
-def main():
-    tag_count_at_or_below = 1
-    generate_tag_list_file(config.raindrop_tags_path, bookmark_count=tag_count_at_or_below)
-    if input(f'Delete tags from {config.raindrop_tags_path}? (yes/N)\n> ') == 'yes':
-        from tags_list import tags as tags_to_delete
-        delete_tags(tags_to_delete)
 
-if __name__ == '__main__':
-    main()
+# Generates list of tags at or below bookmark_count.
+generate_tag_list_file(config.raindrop_tags_path, bookmark_count=100)
+
+# Once tag list is reduced to target tags to delete, uncomment the following:
+from tags_list import tags as tags_to_delete
+# delete_tags(tags_to_delete)
